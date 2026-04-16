@@ -73,7 +73,7 @@ void PlayerShip::Update(const GameTime& gameTime)
 	// We can't go from 0-100 mph instantly! This line interpolates the velocity for us.
 	m_velocity = Vector2::Lerp(m_velocity, targetVelocity, GetResponsiveness());
 	// Move that direction
-	TranslatePosition(m_velocity);
+	TranslatePosition(m_velocity *2);
 
 	if (m_isConfinedToScreen)
 	{
