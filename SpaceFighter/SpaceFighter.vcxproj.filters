@@ -101,6 +101,9 @@
     <ClCompile Include="Weapon.cpp">
       <Filter>Source Files\Game Objects\Weapons</Filter>
     </ClCompile>
+    <ClCompile Include="CustomizeScreen.cpp">
+      <Filter>Source Files\Screens</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainMenuScreen.h">
@@ -156,6 +159,9 @@
     </ClInclude>
     <ClInclude Include="Explosion.h">
       <Filter>Source Files\Game Objects\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomizeScreen.h">
+      <Filter>Source Files\Screens</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

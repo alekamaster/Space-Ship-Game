@@ -1,12 +1,13 @@
 
+#include "CustomizeScreen.h"
 #include "MainMenuScreen.h"
 #include "GameplayScreen.h"
-#include "CustomizeScreen.h"
 
-MainMenuScreen::MainMenuScreen()
+
+CustomizeScreen::CustomizeScreen()
 {
 	// when the screen is removed, quit the game
-	SetOnRemove([this](){ GetGame()->Quit(); });
+	SetOnRemove([this]() { GetGame()->Quit(); });
 
 	SetTransitionInTime(1);
 	SetTransitionOutTime(0.5f);
@@ -22,9 +23,9 @@ void MainMenuScreen::LoadContent(ResourceManager& resourceManager)
 
 	// Create the menu items
 	const int COUNT = 3;
-	MenuItem *pItem;
+	MenuItem* pItem;
 	Font::SetLoadSize(20, true);
-	Font *pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
+	Font* pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
 
 	SetDisplayCount(COUNT);
 
@@ -43,14 +44,14 @@ void MainMenuScreen::LoadContent(ResourceManager& resourceManager)
 
 	// when "Start Game" is selected, replace the "SetRemoveCallback" delegate
 	// so that it doesn't quit the game (originally set in the constructor)
-	GetMenuItem(START_GAME)->SetOnSelect([this](){
-		SetOnRemove([this](){ AddScreen(new GameplayScreen()); });
+	GetMenuItem(START_GAME)->SetOnSelect([this]() {
+		SetOnRemove([this]() { AddScreen(new GameplayScreen()); });
 		Exit();
-	});
+		});
 
 	// when "Customize" is selected, replace the "SetRemoveCallback" delegate
 	GetMenuItem(CUSTOMIZE)->SetOnSelect([this]() {
-		SetOnRemove([this]() { AddScreen(new CustomizeScreen()); });
+		SetOnRemove([this]() { AddScreen(new GameplayScreen()); });
 		Exit();
 		});
 
@@ -75,10 +76,4 @@ void MainMenuScreen::Update(const GameTime& gameTime)
 	MenuScreen::Update(gameTime);
 }
 
-void MainMenuScreen::Draw(SpriteBatch& spriteBatch)
-{
-	spriteBatch.Begin();
-	spriteBatch.Draw(m_pTexture, m_texturePosition, Color::WHITE * GetAlpha(), m_pTexture->GetCenter());
-	MenuScreen::Draw(spriteBatch);
-	spriteBatch.End();
-}
+
