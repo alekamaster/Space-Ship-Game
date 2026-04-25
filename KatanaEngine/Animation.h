@@ -14,8 +14,20 @@
 
 #pragma once
 
+#include "Resource.h"
+#include "Region.h"
+#include <vector>
+#include <string>
+#include <cstdint>
+
 namespace KatanaEngine
 {
+	
+	class GameTime;
+	class ResourceManager;
+	
+	class Texture;
+
 	/** @brief Represents timing and framing values for texture animations. */
 	class Animation : public Resource
 	{

@@ -14,6 +14,16 @@
 
 #pragma once
 
+#include <vector>
+#include <string>
+#include <allegro5/allegro.h> // <-- Soluciona el error de ALLEGRO_TRANSFORM
+#include "Vector2.h"
+#include "Color.h"            // <-- Soluciona el error de 'color'
+#include "Texture.h"          // <-- Soluciona las confusiones de 'int'
+#include "Font.h"
+#include "Animation.h"        // <-- Soluciona el error de 'Animation'
+#include "Region.h"
+
 namespace KatanaEngine
 {
 	/** @brief Defines the states for text alignment. */

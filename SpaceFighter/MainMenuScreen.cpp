@@ -2,7 +2,7 @@
 #include "MainMenuScreen.h"
 #include "GameplayScreen.h"
 #include "CustomizeScreen.h"
-
+#include "MenuItem.h"
 MainMenuScreen::MainMenuScreen()
 {
 	// when the screen is removed, quit the game
@@ -22,14 +22,16 @@ void MainMenuScreen::LoadContent(ResourceManager& resourceManager)
 
 	// Create the menu items
 	const int COUNT = 3;
-	MenuItem *pItem;
+	MenuItem* pItem;
 	Font::SetLoadSize(20, true);
-	Font *pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
+	Font* pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
 
 	SetDisplayCount(COUNT);
 
 	enum Items { START_GAME, CUSTOMIZE, QUIT };
-	std::string text[COUNT] = { "Start Game", "Quit" };
+
+	// ¡AQUÍ ESTÁ LA CORRECCIÓN! Añadimos "Customize" en el medio para que coincida con el enum
+	std::string text[COUNT] = { "Start Game", "Customize", "Quit" };
 
 	for (int i = 0; i < COUNT; i++)
 	{
@@ -43,10 +45,10 @@ void MainMenuScreen::LoadContent(ResourceManager& resourceManager)
 
 	// when "Start Game" is selected, replace the "SetRemoveCallback" delegate
 	// so that it doesn't quit the game (originally set in the constructor)
-	GetMenuItem(START_GAME)->SetOnSelect([this](){
-		SetOnRemove([this](){ AddScreen(new GameplayScreen()); });
+	GetMenuItem(START_GAME)->SetOnSelect([this]() {
+		SetOnRemove([this]() { AddScreen(new GameplayScreen()); });
 		Exit();
-	});
+		});
 
 	// when "Customize" is selected, replace the "SetRemoveCallback" delegate
 	GetMenuItem(CUSTOMIZE)->SetOnSelect([this]() {

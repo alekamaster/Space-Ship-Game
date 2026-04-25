@@ -13,9 +13,16 @@
 */
 
 #pragma once
+#include "Resource.h"
+#include "Vector2.h"             // Soluciona los errores de Vector2, GetSize y GetCenter
+#include <string>
+#include <allegro5/allegro.h>    // Necesario para que reconozca ALLEGRO_BITMAP
+// --------------------------------
 
 namespace KatanaEngine
 {
+	class ResourceManager;
+
 	/** @brief Represents a 2D grid of texels. */
 	class Texture : public Resource
 	{

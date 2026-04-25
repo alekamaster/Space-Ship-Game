@@ -1,22 +1,27 @@
-
 #include "PlayerShip.h"
 #include "Level.h"
+
+// Usamos el namespace en lugar de encerrar el código en él
+using namespace KatanaEngine;
+
+// 1. INICIALIZACIÓN DE VARIABLES ESTÁTICAS (Afuera de todo)
+std::string PlayerShip::SelectedTexturePath = "Textures\\SpaceShipDefault.png";
+float PlayerShip::SelectedScale = 1.0f;
 
 void PlayerShip::LoadContent(ResourceManager& resourceManager)
 {
 	ConfineToScreen();
 	SetResponsiveness(0.1);
 
-	m_pTexture = resourceManager.Load<Texture>("Textures\\PlayerShip.png");
+	// Usamos la ruta estática que guardamos en el menú de personalización
+	m_pTexture = resourceManager.Load<Texture>(SelectedTexturePath);
 
 	AudioSample* pAudio = resourceManager.Load<AudioSample>("Audio\\Effects\\Laser.wav");
 	pAudio->SetVolume(0.5f);
 	GetWeapon("Main Blaster")->SetFireSound(pAudio);
 
 	SetPosition(Game::GetScreenCenter() + Vector2::UNIT_Y * 300);
-
 }
-
 
 void PlayerShip::Initialize(Level* pLevel, Vector2& startPosition)
 {
@@ -41,30 +46,11 @@ void PlayerShip::HandleInput(const InputState& input)
 
 		TriggerType type = TriggerType::None;
 		if (input.IsKeyDown(Key::SPACE)) type |= TriggerType::Primary;
-		//if (input.IsKeyDown(Key::D)) type |= TriggerType::Secondary;
-		//if (input.IsKeyDown(Key::S)) type |= TriggerType::Special;
-
-		//// Handle Xbox Controller
-		//GamePadState* pState = input.GetGamePadState(0);
-		//if (pState->IsConnected)
-		//{
-		//	// gamepad overrides keyboard input
-		//	Vector2 thumbstick = pState->Thumbsticks.Left;
-		//	if (thumbstick.LengthSquared() < 0.08f) thumbstick = Vector2::ZERO;
-		//	direction = thumbstick;
-
-		//	type = TriggerType::None;
-		//	if (pState->Triggers.Right > 0.5f) type |= TriggerType::Primary;
-		//	if (pState->Triggers.Left > 0.5f) type |= TriggerType::Secondary;
-		//	if (pState->IsButtonDown(Button::Y)) type |= TriggerType::Special;
-		//}
-
 
 		SetDesiredDirection(direction);
 		if (type != TriggerType::None) FireWeapons(type);
 	}
 }
-
 
 void PlayerShip::Update(const GameTime& gameTime)
 {
@@ -73,7 +59,7 @@ void PlayerShip::Update(const GameTime& gameTime)
 	// We can't go from 0-100 mph instantly! This line interpolates the velocity for us.
 	m_velocity = Vector2::Lerp(m_velocity, targetVelocity, GetResponsiveness());
 	// Move that direction
-	TranslatePosition(m_velocity *2);
+	TranslatePosition(m_velocity * 2);
 
 	if (m_isConfinedToScreen)
 	{
@@ -86,10 +72,8 @@ void PlayerShip::Update(const GameTime& gameTime)
 		Vector2* pPosition = &GetPosition(); // current position (middle of the ship)
 		if (pPosition->X - GetHalfDimensions().X < Left) // are we past the left edge?
 		{
-			// move the ship to the left edge of the screen (keep Y the same)
 			SetPosition(Left + GetHalfDimensions().X, pPosition->Y);
-			m_velocity.X = 0; // remove any velocity that could potentially
-							  // keep the ship pinned against the edge
+			m_velocity.X = 0;
 		}
 		if (pPosition->X + GetHalfDimensions().X > Right) // right edge?
 		{
@@ -113,17 +97,15 @@ void PlayerShip::Update(const GameTime& gameTime)
 
 void PlayerShip::Draw(SpriteBatch& spriteBatch)
 {
-	if (IsActive())
-	{
-		const float alpha = GetCurrentLevel()->GetAlpha();
-		spriteBatch.Draw(m_pTexture, GetPosition(), Color::WHITE * alpha, m_pTexture->GetCenter());
-	}
+	// Usamos la escala estática para dibujar la nave del tamaño correcto
+	spriteBatch.Draw(m_pTexture, GetPosition(), Color::WHITE, m_pTexture->GetCenter(), Vector2::ONE * SelectedScale);
 }
-
 
 Vector2 PlayerShip::GetHalfDimensions() const
 {
-	return m_pTexture->GetCenter();
+	// Multiplicamos por SelectedScale para que los bordes 
+	// y colisiones reconozcan el nuevo tamaño de la nave.
+	return m_pTexture->GetCenter() * SelectedScale;
 }
 
 void PlayerShip::SetResponsiveness(const float responsiveness)
