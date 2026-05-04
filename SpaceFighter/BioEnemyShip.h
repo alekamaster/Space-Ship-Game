@@ -3,6 +3,16 @@
 
 #include "EnemyShip.h"
 
+
+enum class BioEnemyShipType
+{
+	Normal,
+	Burst,
+	Speed,
+	Laser,
+	Multishot,
+	Health
+};
 /** @brief Represents an enemy ship that is biological in nature. */
 class BioEnemyShip : public EnemyShip
 {
@@ -29,5 +39,8 @@ public:
 private:
 
 	Texture *m_pTexture = nullptr;
+	BioEnemyShipType m_type = BioEnemyShipType::Normal;
+	float m_shootTimer = 0.0f;
+	float m_shootCooldown = 3.0f; // Time in seconds between shots
 
 };

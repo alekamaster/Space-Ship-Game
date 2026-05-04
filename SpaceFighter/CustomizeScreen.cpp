@@ -1,134 +1,154 @@
 #include "CustomizeScreen.h"
 #include "MainMenuScreen.h"
 #include "GameplayScreen.h"
-#include "PlayerShip.h" // To access SelectedTexturePath
-#include "Game.h"
-#include "MenuItem.h"
-
-using namespace KatanaEngine;
+#include "PlayerShip.h"
+#include "MenuItem.h" // 隆Importante incluir MenuItem!
 
 CustomizeScreen::CustomizeScreen()
 {
-    m_currentShipIndex = 0;
-    SetTransitionInTime(1);
-    SetTransitionOutTime(0.5f);
-    Show();
+	m_currentShipIndex = 0;
+
+	// Configurar transiciones igual que en MainMenuScreen
+	SetTransitionInTime(1);
+	SetTransitionOutTime(0.5f);
+
+	Show(); // important!!
 }
 
 void CustomizeScreen::LoadContent(ResourceManager& resourceManager)
 {
-    // 1. Configure your 4 .png files
-    m_shipFiles = {
-        "Textures\\SpaceShipDefault.png",
-        "Textures\\SpaceShipAttack.png",
-        "Textures\\SpaceShipHealth.png",
-        "Textures\\SpaceShipSpeed.png"
-    };
+	// 1. Cargar datos de las naves
+	m_shipFiles.push_back("Textures\\SpaceShipDefault.png");
+	m_shipDescriptions.push_back("Balanced Ship: \nAverage speed, standard damage.");
+	m_shipScales.push_back(1.0f);
 
-    // 2. Configure your ship descriptions
-    m_shipDescriptions = {
-        "Ship 1: Balanced. Ideal for beginners.",
-        "Ship 2: Heavy. High durability but very slow.",
-        "Ship 3: Explorer. Very fast with weak shots.",
-        "Ship 4: Prototype. High power, hard to control."
-    };
-    m_shipScales = {
-		1.0f, // Scale for Ship 1
-		0.5f, // Scale for Ship 2
-		0.6f, // Scale for Ship 3
-		0.3f  // Scale for Ship 4
-    }
-    
-    
-    ;
+	m_shipFiles.push_back("Textures\\SpaceShipHealth.png");
+	m_shipDescriptions.push_back("Heavy Ship: \nMore health, slower movement.");
+	m_shipScales.push_back(1.1f);
 
-    // Load the font
-    Font::SetLoadSize(20, true);
-    m_pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
+	m_shipFiles.push_back("Textures\\SpaceShipSpeed.png");
+	m_shipDescriptions.push_back("Speed Ship: \nHigh mobility, light armor.");
+	m_shipScales.push_back(0.5f);
 
-    // Load the initial preview texture
-    m_pPreviewTexture = resourceManager.Load<Texture>(m_shipFiles[m_currentShipIndex]);
+	m_shipFiles.push_back("Textures\\SpaceShipAttack.png");
+	m_shipDescriptions.push_back("Elite Ship: \nLethal shot, slow reload.");
+	m_shipScales.push_back(0.8f);
 
-    // Screen positions
-    m_previewPosition = Game::GetScreenCenter() + Vector2(150, -50);
-    m_descriptionPosition = Game::GetScreenCenter() + Vector2(50, 80);
+	// Precargar las texturas
+	for (const std::string& file : m_shipFiles)
+	{
+		m_loadedTextures.push_back(resourceManager.Load<Texture>(file));
+	}
 
-    // 3. Create the Menu
-    const int COUNT = 3;
-    SetDisplayCount(COUNT);
+	m_previewPosition = Game::GetScreenCenter() + Vector2(200, -50);
+	m_descriptionPosition = m_previewPosition + Vector2(-150, 120);
 
-    enum Items { CHANGE, START, BACK };
-    std::string text[COUNT] = { "Next Ship", "Start Game", "Back" };
+	// 2. Configurar la fuente (Id茅ntico a MainMenuScreen)
+	Font::SetLoadSize(20, true);
+	m_pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
 
-    for (int i = 0; i < COUNT; i++)
-    {
-        MenuItem* pItem = new MenuItem(text[i]);
-        pItem->SetPosition(Vector2(100, 150 + 60 * i));
-        pItem->SetFont(m_pFont);
-        pItem->SetColor(Color::BLUE);
-        pItem->SetSelected(i == 0);
-        AddMenuItem(pItem);
-    }
+	// 3. Crear los elementos del men煤
+	const int COUNT = 3;
+	MenuItem* pItem;
 
-    // --- BUTTON LOGIC ---
+	SetDisplayCount(COUNT);
 
-    // Change Ship
-    GetMenuItem(CHANGE)->SetOnSelect([this, &resourceManager]() {
-        m_currentShipIndex = (m_currentShipIndex + 1) % 4; // Cycle between 0 and 3
+	enum Items { CHANGE_SHIP, START_GAME, BACK };
 
-        // Update the global path for the PlayerShip
-        PlayerShip::SelectedTexturePath = m_shipFiles[m_currentShipIndex];
-		PlayerShip::SelectedScale = m_shipScales[m_currentShipIndex];
+	std::string text[COUNT] = { "Change Ship", "Start Game", "Back" };
 
-        // Update the screen preview image
-        m_pPreviewTexture = resourceManager.Load<Texture>(PlayerShip::SelectedTexturePath);
-        });
+	for (int i = 0; i < COUNT; i++)
+	{
+		pItem = new MenuItem(text[i]);
+		pItem->SetPosition(Vector2(100, 100 + 50 * i));
+		pItem->SetFont(m_pFont);
+		pItem->SetColor(Color::BLUE);
+		pItem->SetSelected(i == 0);
+		AddMenuItem(pItem);
+	}
 
-    // Start Game
-    GetMenuItem(START)->SetOnSelect([this]() {
-        SetOnRemove([this]() { AddScreen(new GameplayScreen()); });
-        Exit();
-        });
+	// 4. Asignar los delegados (Delegates) usando SetOnRemove y Exit
 
-    // Back
-    GetMenuItem(BACK)->SetOnSelect([this]() {
-        SetOnRemove([this]() { AddScreen(new MainMenuScreen()); });
-        Exit();
-        });
+	// Bot贸n "Change Ship"
+	GetMenuItem(CHANGE_SHIP)->SetOnSelect([this]() {
+		m_currentShipIndex++;
+		if (m_currentShipIndex >= m_shipFiles.size())
+		{
+			m_currentShipIndex = 0;
+		}
+		});
+
+	// Bot贸n "Start Game"
+	GetMenuItem(START_GAME)->SetOnSelect([this]() {
+		PlayerShip::SetSelectedShip(m_currentShipIndex);
+
+		SetOnRemove([this]() { AddScreen(new GameplayScreen()); });
+		Exit();
+		});
+
+	// Bot贸n "Back"
+	GetMenuItem(BACK)->SetOnSelect([this]() {
+		SetOnRemove([this]() { AddScreen(new MainMenuScreen()); });
+		Exit();
+		});
 }
 
 void CustomizeScreen::Update(const GameTime& gameTime)
 {
-    float alpha = GetAlpha();
-    for (MenuItem* pItem : GetMenuItems())
-    {
-        pItem->SetAlpha(alpha);
-        pItem->SetColor(pItem->IsSelected() ? Color::WHITE : Color::BLUE);
-    }
-    MenuScreen::Update(gameTime);
+	bool isSelected = false;
+	float alpha = GetAlpha();
+	float offset = sinf(gameTime.GetTotalTime() * 10) * 5 + 5;
+
+	// Actualizar animaci贸n de los botones (Id茅ntico a MainMenuScreen)
+	for (MenuItem* pItem : GetMenuItems())
+	{
+		pItem->SetAlpha(alpha);
+		isSelected = pItem->IsSelected();
+		pItem->SetColor(isSelected ? Color::WHITE : Color::BLUE);
+		pItem->SetTextOffset(isSelected ? Vector2::UNIT_X * offset : Vector2::ZERO);
+	}
+
+	// Actualizar la textura previa
+	if (!m_loadedTextures.empty())
+	{
+		m_pPreviewTexture = m_loadedTextures[m_currentShipIndex];
+	}
+
+	MenuScreen::Update(gameTime);
 }
 
 void CustomizeScreen::Draw(SpriteBatch& spriteBatch)
 {
-    spriteBatch.Begin();
+	spriteBatch.Begin();
 
-    // Draw the selected ship preview
-    if (m_pPreviewTexture)
-    {
-        // 1. Obtenemos la escala correspondiente a la nave actual
-        float currentScale = m_shipScales[m_currentShipIndex];
+	float alpha = GetAlpha();
 
-        // 2. Agregamos el par醡etro de escala (Vector2::ONE * currentScale) al final del Draw
-        spriteBatch.Draw(m_pPreviewTexture, m_previewPosition, Color::WHITE * GetAlpha(), m_pPreviewTexture->GetCenter(), Vector2::ONE * currentScale);
-    } // <--- seg鷕ate de tener esta llave de cierre!
+	// Dibujar la textura de la nave con el Alpha global de la pantalla
+	if (m_pPreviewTexture)
+	{
+		float scale = m_shipScales[m_currentShipIndex];
+		spriteBatch.Draw(
+			m_pPreviewTexture,
+			m_previewPosition,
+			Color::WHITE * alpha,
+			m_pPreviewTexture->GetCenter(),
+			Vector2(scale, scale)
+		);
+	}
 
-    // Draw the ship description
-    if (m_pFont)
-    {
-        std::string desc = m_shipDescriptions[m_currentShipIndex];
-        spriteBatch.DrawString(m_pFont, &desc, m_descriptionPosition, Color::WHITE * GetAlpha());
-    }
+	// Dibujar el texto descriptivo con el Alpha global de la pantalla
+	if (m_pFont)
+	{
+		spriteBatch.DrawString(
+			m_pFont,
+			&m_shipDescriptions[m_currentShipIndex],
+			m_descriptionPosition,
+			Color::WHITE * alpha
+		);
+	}
 
-    MenuScreen::Draw(spriteBatch);
-    spriteBatch.End();
+	// Dejar que el men煤 base dibuje los botones (Id茅ntico a MainMenuScreen)
+	MenuScreen::Draw(spriteBatch);
+
+	spriteBatch.End();
 }

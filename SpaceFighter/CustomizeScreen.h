@@ -1,38 +1,46 @@
 #pragma once
-#include "MenuScreen.h"
-#include "ResourceManager.h"
-#include "SpriteBatch.h"
-#include "Texture.h"
-#include "Font.h"
-#include "Vector2.h"
-#include "GameTime.h"
+
+#include "KatanaEngine.h"
 #include <vector>
 #include <string>
 
-class CustomizeScreen : public KatanaEngine::MenuScreen
+using namespace KatanaEngine;
+
+/** @brief The customization menu screen for the game. */
+class CustomizeScreen : public MenuScreen
 {
 public:
-    CustomizeScreen();
 
-    virtual void LoadContent(KatanaEngine::ResourceManager& resourceManager) override;
-    virtual void Update(const KatanaEngine::GameTime& gameTime) override;
-    virtual void Draw(KatanaEngine::SpriteBatch& spriteBatch) override;
+	/** @brief Instantiate a customization screen object. */
+	CustomizeScreen();
+	virtual ~CustomizeScreen() {}
+
+	/** @brief Load the content for the screen.
+		@param resourceManager A reference to the game's resource manager,
+		used for loading and managing game assets (resources). */
+	virtual void LoadContent(ResourceManager& resourceManager);
+
+	/** @brief Update the screen.
+		@param gameTime Timing values including time since last update. */
+	virtual void Update(const GameTime& gameTime);
+
+	/** @brief Render the screen.
+		@param spriteBatch A reference to the game's sprite batch, used for rendering. */
+	virtual void Draw(SpriteBatch& spriteBatch);
 
 private:
 
-    // En la sección private de CustomizeScreen.h
-    
+	Texture* m_pPreviewTexture = nullptr;
+	Vector2 m_previewPosition;
 
-    // Variables para las texturas y selección
-    KatanaEngine::Texture* m_pPreviewTexture;
-    KatanaEngine::Vector2 m_previewPosition;
+	int m_currentShipIndex = 0;
+	std::vector<std::string> m_shipFiles;
+	std::vector<std::string> m_shipDescriptions;
+	std::vector<float> m_shipScales;
 
-    int m_currentShipIndex;
-    std::vector<std::string> m_shipFiles;
-    std::vector<std::string> m_shipDescriptions;
-    std::vector<float> m_shipScales;
+	std::vector<Texture*> m_loadedTextures;
 
-    // Fuente y posición del texto
-    KatanaEngine::Font* m_pFont;
-    KatanaEngine::Vector2 m_descriptionPosition;
+	Font* m_pFont = nullptr;
+	Vector2 m_descriptionPosition;
+
 };

@@ -30,7 +30,7 @@ void MainMenuScreen::LoadContent(ResourceManager& resourceManager)
 
 	enum Items { START_GAME, CUSTOMIZE, QUIT };
 
-	// ¡AQUÍ ESTÁ LA CORRECCIÓN! Añadimos "Customize" en el medio para que coincida con el enum
+	// Customize the text for each menu item
 	std::string text[COUNT] = { "Start Game", "Customize", "Quit" };
 
 	for (int i = 0; i < COUNT; i++)
