@@ -158,6 +158,12 @@ private:
 	std::vector<LaserBeam*> m_enemyLasers;
 	float m_enemySpawnTimer = 0.0f;
 
+	// --- Wave and Level Progression ---
+	int m_currentLevel = 1;              // Tracks the current level
+	int m_enemiesToSpawn = 5;            // How many enemies are left to spawn in this level
+	float m_levelTransitionTimer = 0.0f; // Timer for the text display pause
+	Font* m_pFont = nullptr;             // Pointer to draw the transition text
+
 	void CheckCollisions(std::vector<GameObject*>& sector);
 
 	virtual Vector2 GetSectorCount() const { return m_sectorCount; }

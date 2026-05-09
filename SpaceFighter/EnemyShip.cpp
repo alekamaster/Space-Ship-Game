@@ -2,14 +2,13 @@
 #include "Level.h"
 #include "Projectile.h"
 #include "LaserBeam.h"
-#include "PlayerShip.h" // <-- ¡LA PIEZA FALTANTE AÑADIDA AQUÍ!
-#include <cstdlib>      // Necesario para la función rand()
+#include "PlayerShip.h" 
+#include <cstdlib>      
 
 EnemyShip::EnemyShip()
 {
 	SetMaxHitPoints(1);
 	SetCollisionRadius(20);
-
 	m_shootTimer = (float)(rand() % 200) / 100.0f;
 }
 
@@ -17,65 +16,71 @@ void EnemyShip::SetType(EnemyType type)
 {
 	m_type = type;
 
-	// Configuration based on the type of enemy ship
+	// Configuración de Estadísticas, Escalas y Puntos
 	switch (m_type)
 	{
 	case EnemyType::Burst:
 		SetMaxHitPoints(2);
-		m_shootCooldown = 0.5f; // Shoots rapidly
+		m_shootCooldown = 0.5f;
 		SetSpeed(50);
+		m_scale = 0.3f;
+		m_scoreValue = 20;
 		break;
 	case EnemyType::Speed:
 		SetMaxHitPoints(1);
-		m_shootCooldown = 999.0f; // Does not shoot, it's kamikaze
-		SetSpeed(200); // Very fast
+		m_shootCooldown = 999.0f; // Kamikaze
+		SetSpeed(200);
+		m_scale = 0.4f; // Muy pequeño
+		m_scoreValue = 15;
 		break;
 	case EnemyType::Health:
-		SetMaxHitPoints(10); // High health
+		SetMaxHitPoints(10);
 		m_shootCooldown = 2.0f;
-		SetSpeed(20); // Very slow
+		SetSpeed(20);
+		m_scale = 0.4f; // Gigante
+		m_scoreValue = 100; // Gran recompensa
 		break;
 	case EnemyType::Laser:
 		SetMaxHitPoints(1);
-		m_shootCooldown = 4.0f; // reload time for the laser
+		m_shootCooldown = 4.0f;
 		SetSpeed(30);
+		m_scale = 0.3f;
+		m_scoreValue = 50;
 		break;
 	case EnemyType::Multishot:
 		SetMaxHitPoints(1);
 		m_shootCooldown = 1.5f;
 		SetSpeed(40);
+		m_scale = 0.3f;
+		m_scoreValue = 30;
 		break;
 	default: // Normal
 		SetMaxHitPoints(1);
 		m_shootCooldown = 2.0f;
 		SetSpeed(50);
+		m_scale = 0.6f;
+		m_scoreValue = 10;
 		break;
 	}
 }
 
-void EnemyShip::Update(const KatanaEngine::GameTime& gameTime)
+void EnemyShip::Update(const GameTime& gameTime)
 {
-	// spawn delay logic
 	if (m_delaySeconds > 0)
 	{
 		m_delaySeconds -= gameTime.GetElapsedTime();
-
-		if (m_delaySeconds <= 0)
-		{
-			GameObject::Activate();
-		}
+		if (m_delaySeconds <= 0) GameObject::Activate();
 	}
 
-	// active ship logic
 	if (IsActive())
 	{
 		m_activationSeconds += gameTime.GetElapsedTime();
 		if (m_activationSeconds > 2 && !IsOnScreen()) Deactivate();
 
-		// movement logic based on the type of enemy ship
+		if (m_flashTimer > 0.0f) m_flashTimer -= (float)gameTime.GetElapsedTime();
+
 		if (m_type == EnemyType::Speed)
 		{
-			// Kamikaze logic: Seek the player to collide
 			PlayerShip* pPlayer = GetCurrentLevel()->GetClosestObject<PlayerShip>(GetPosition(), 0);
 			if (pPlayer)
 			{
@@ -86,27 +91,41 @@ void EnemyShip::Update(const KatanaEngine::GameTime& gameTime)
 		}
 		else
 		{
-			// join the screen slowly from the top, and then stop
-			if (GetPosition().Y < 100) // 100 pixels from the top of the screen
+			if (GetPosition().Y < 100)
 			{
 				TranslatePosition(Vector2::UNIT_Y * (GetSpeed() * 2) * gameTime.GetElapsedTime());
 			}
 			else
 			{
-				// ships that are not kamikaze will move slowly downwards
 				TranslatePosition(Vector2::UNIT_Y * (GetSpeed() * 0.2f) * gameTime.GetElapsedTime());
 			}
 		}
 
-		// --- NEW SHOOTING LOGIC ---
-		// Validate that it is not the Kamikaze ship, as it should not shoot
+		// --- LÓGICA DE DISPARO BLINDADA ---
 		if (m_type != EnemyType::Speed)
 		{
-			m_shootTimer -= gameTime.GetElapsedTime();
+			m_shootTimer -= (float)gameTime.GetElapsedTime();
 			if (m_shootTimer <= 0.0f)
 			{
-				Fire();
-				m_shootTimer = m_shootCooldown; // time reset
+				Fire(); // Dispara primero
+
+				if (m_type == EnemyType::Burst)
+				{
+					m_burstShotsFired++;
+					if (m_burstShotsFired >= 3)
+					{
+						m_shootTimer = 2.0f; // Pausa larga
+						m_burstShotsFired = 0; // Reset
+					}
+					else
+					{
+						m_shootTimer = m_shootCooldown; // Pausa corta
+					}
+				}
+				else
+				{
+					m_shootTimer = m_shootCooldown; // Nave normal
+				}
 			}
 		}
 	}
@@ -119,13 +138,52 @@ void EnemyShip::Initialize(const Vector2 position, const double delaySeconds)
 	SetPosition(position);
 	m_delaySeconds = delaySeconds;
 
+	if (m_pTexture != nullptr)
+	{
+		SetCollisionRadius(m_pTexture->GetCenter().X * m_scale);
+	}
+
+	// --- EL LAVADO DE CEREBRO (RESET) ---
+	m_flashTimer = 0.0f;
+	m_burstShotsFired = 0;
+	m_shootTimer = 1.0f; // Les damos 1 segundo de paz al aparecer antes de que disparen
+
 	Ship::Initialize();
+}
+
+void EnemyShip::Draw(SpriteBatch& spriteBatch)
+{
+	if (IsActive() && m_pTexture != nullptr)
+	{
+		const float alpha = GetCurrentLevel()->GetAlpha();
+		Color drawColor = (m_flashTimer > 0.0f) ? Color::RED : Color::WHITE;
+
+		spriteBatch.Draw(
+			m_pTexture,
+			GetPosition(),
+			drawColor * alpha,
+			m_pTexture->GetCenter(),
+			Vector2(m_scale, m_scale),
+			0.0f
+		);
+	}
+}
+
+Vector2 EnemyShip::GetHalfDimensions() const
+{
+	if (m_pTexture != nullptr) return m_pTexture->GetCenter() * m_scale;
+	return Vector2::ZERO;
+}
+
+void EnemyShip::Hit(const float damage)
+{
+	m_flashTimer = 0.1f;
+	Ship::Hit(damage);
 }
 
 void EnemyShip::Fire()
 {
 	if (!m_pProjectiles) return;
-
 	const float bulletSpeed = 300.0f;
 
 	switch (m_type)
@@ -134,25 +192,14 @@ void EnemyShip::Fire()
 	case EnemyType::Burst:
 	case EnemyType::Health:
 	{
-		// Shoot a single bullet straight down
 		Projectile* pBullet = nullptr;
-
-		// Find an inactive projectile in the pool
 		for (Projectile* p : *m_pProjectiles)
 		{
-			if (!p->IsActive())
-			{
-				pBullet = p;
-				break;
-			}
+			if (!p->IsActive()) { pBullet = p; break; }
 		}
-
 		if (pBullet)
 		{
-			// Activate the bullet (position, wasShotByPlayer = false)
 			pBullet->Activate(GetPosition(), false);
-
-			// Set the downward direction and speed
 			pBullet->SetDirection(Vector2::UNIT_Y);
 			pBullet->SetSpeed(bulletSpeed);
 		}
@@ -160,32 +207,17 @@ void EnemyShip::Fire()
 	}
 	case EnemyType::Multishot:
 	{
-		// Shoot three bullets in a spread pattern
-		Vector2 directions[3] = {
-			Vector2(0, 1),       // Center (Straight down)
-			Vector2(-0.3f, 1),   // Left Diagonal
-			Vector2(0.3f, 1)     // Right Diagonal
-		};
-
+		Vector2 directions[3] = { Vector2(0, 1), Vector2(-0.3f, 1), Vector2(0.3f, 1) };
 		for (int i = 0; i < 3; i++)
 		{
 			Projectile* pBullet = nullptr;
-
-			// Find an inactive projectile in the pool for each direction
 			for (Projectile* p : *m_pProjectiles)
 			{
-				if (!p->IsActive())
-				{
-					pBullet = p;
-					break;
-				}
+				if (!p->IsActive()) { pBullet = p; break; }
 			}
-
 			if (pBullet)
 			{
 				directions[i].Normalize();
-
-				// Activate and set specific direction and speed
 				pBullet->Activate(GetPosition(), false);
 				pBullet->SetDirection(directions[i]);
 				pBullet->SetSpeed(bulletSpeed);
@@ -197,28 +229,18 @@ void EnemyShip::Fire()
 	{
 		if (!m_pLaserBeams) break;
 		LaserBeam* pLaser = nullptr;
-
-		// Find an inactive laser beam in the pool
 		for (LaserBeam* l : *m_pLaserBeams)
 		{
-			if (!l->IsActive())
-			{
-				pLaser = l;
-				break;
-			}
+			if (!l->IsActive()) { pLaser = l; break; }
 		}
-
 		if (pLaser)
 		{
-			// Activate the laser for 1.0 second
-			pLaser->Activate(GetPosition(), 1.0f);
+			Vector2 shipBottom = GetPosition() + Vector2(0.0f, GetHalfDimensions().Y);
+			float laserHalfLength = pLaser->GetHalfDimensions().Y;
+			Vector2 exactSpawnPosition = shipBottom + Vector2(0.0f, laserHalfLength);
+			pLaser->Activate(exactSpawnPosition, 1.0f);
 		}
 		break;
 	}
 	}
-}
-
-void EnemyShip::Hit(const float damage)
-{
-	Ship::Hit(damage);
 }

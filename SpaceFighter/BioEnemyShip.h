@@ -1,46 +1,22 @@
-
 #pragma once
-
 #include "EnemyShip.h"
 
-
-enum class BioEnemyShipType
-{
-	Normal,
-	Burst,
-	Speed,
-	Laser,
-	Multishot,
-	Health
-};
 /** @brief Represents an enemy ship that is biological in nature. */
 class BioEnemyShip : public EnemyShip
 {
-
 public:
 
 	/** @brief Creates a new instance of BioEnemyShip. */
 	BioEnemyShip();
-	virtual ~BioEnemyShip() { }
+	virtual ~BioEnemyShip();
 
-	/** @brief Sets the texture that will be used to render the enemy ship.
-		@param pTexture A pointer to the texture. */
-	virtual void SetTexture(Texture *pTexture) { m_pTexture = pTexture; }
+	// Sobrescribimos los métodos virtuales que podrían quedar como abstractos
+	virtual void SetType(EnemyType type) override;
+	virtual void Update(const KatanaEngine::GameTime& gameTime) override;
+	virtual void Draw(KatanaEngine::SpriteBatch& spriteBatch) override;
+	virtual void Initialize(const KatanaEngine::Vector2 position, const double delaySeconds) override;
+	virtual KatanaEngine::Vector2 GetHalfDimensions() const override;
+	virtual void Hit(const float damage) override;
 
-	/** @brief Updates the enemy ship.
-		@param gameTime A reference to the game time object. */
-	virtual void Update(const GameTime& gameTime);
-
-	/** @brief Draws the enemy ship.
-		@param spriteBatch A reference to the game's sprite batch, used for rendering. */
-	virtual void Draw(SpriteBatch& spriteBatch);
-
-
-private:
-
-	Texture *m_pTexture = nullptr;
-	BioEnemyShipType m_type = BioEnemyShipType::Normal;
-	float m_shootTimer = 0.0f;
-	float m_shootCooldown = 3.0f; // Time in seconds between shots
-
+	// Ya no necesitamos reescribir SetTexture u otros si no son puramente virtuales.
 };

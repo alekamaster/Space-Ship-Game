@@ -2,7 +2,7 @@
 
 LaserBeam::LaserBeam()
 {
-	//large radius for the laser beam, since it is a continuous beam that can hit the player from a distance
+	// Radio de colisión para compensar que el láser es continuo
 	SetCollisionRadius(50);
 }
 
@@ -17,10 +17,10 @@ void LaserBeam::Update(const GameTime& gameTime)
 {
 	if (IsActive())
 	{
-		//time for the laser
+		// Tiempo de vida del láser
 		m_lifetime -= (float)gameTime.GetElapsedTime();
 
-		// despawn the laser beam if its lifetime has expired
+		// Apagar si el tiempo expiró
 		if (m_lifetime <= 0.0f)
 		{
 			Deactivate();
@@ -34,7 +34,31 @@ void LaserBeam::Draw(SpriteBatch& spriteBatch)
 {
 	if (IsActive() && m_pTexture)
 	{
-		// draw the laser beam with full opacity, since it is a continuous beam that can hit the player from a distance
-		spriteBatch.Draw(m_pTexture, GetPosition(), Color::WHITE, m_pTexture->GetCenter());
+		spriteBatch.End();
+		spriteBatch.Begin(SpriteSortMode::Deferred, BlendState::Additive);
+
+		// Dibujamos usando X para el grosor y Y para el largo
+		spriteBatch.Draw(
+			m_pTexture,
+			GetPosition(),
+			Color::WHITE,
+			m_pTexture->GetCenter(),
+			Vector2(m_widthScale, m_lengthScale),
+			0.0f
+		);
+
+		spriteBatch.End();
+		spriteBatch.Begin();
 	}
+}
+
+Vector2 LaserBeam::GetHalfDimensions() const
+{
+	if (m_pTexture != nullptr)
+	{
+		// Calculamos la caja de colisión respetando el ancho y el largo individualmente
+		Vector2 center = m_pTexture->GetCenter();
+		return Vector2(center.X * m_widthScale, center.Y * m_lengthScale);
+	}
+	return Vector2::ZERO;
 }

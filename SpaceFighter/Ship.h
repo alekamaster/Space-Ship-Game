@@ -13,7 +13,9 @@ public:
 	/** @brief Creates a new instance of Ship. */
 	Ship();
 	virtual ~Ship() { }
-
+	/** @brief Gets the max hit points of the ship.
+		@return Returns the max hit points of the ship. */
+	virtual float GetMaxHitPoints() const { return m_maxHitPoints; }
 	/** @brief Updates the ship.
 		@param pGameTime A pointer to the game time object. */
 	virtual void Update(const GameTime& gameTime);
@@ -62,6 +64,9 @@ public:
 		@param hitPoints The max hit points of the ship. */
 	virtual void SetMaxHitPoints(const float hitPoints) { m_maxHitPoints = hitPoints; }
 
+	/** @brief Set the desired movement direction for the ship.
+		@remark Default implementation is a no-op; derived classes (PlayerShip, EnemyShip) may override. */
+	virtual void SetDesiredDirection(const Vector2& direction) { /* default: do nothing */ }
 
 	virtual IAttachment* GetAttachment(const std::string& key);
 
@@ -90,9 +95,7 @@ protected:
 		@return Returns the current hit points of the ship. */
 	virtual float GetHitPoints() const { return m_hitPoints; }
 
-	/** @brief Gets the max hit points of the ship.
-		@return Returns the max hit points of the ship. */
-	virtual float GetMaxHitPoints() const { return m_maxHitPoints; }
+
 
 
 private:

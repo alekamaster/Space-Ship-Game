@@ -3,6 +3,7 @@
 #include "LaserBeam.h" // Needed to instantiate the continuous laser pool
 #include "Blaster.h"
 #include "GameplayScreen.h"
+#include <string> // Needed for std::to_string
 
 std::vector<Explosion*> Level::s_explosions;
 
@@ -87,7 +88,7 @@ Level::Level()
 	m_pPlayerShip->Activate();
 	AddGameObject(m_pPlayerShip);
 
-	// Pool: Enemy Projectiles (FIXED: Properly spawn Projectiles, not EnemyShips)
+	// Pool: Enemy Projectiles
 	for (int i = 0; i < 100; i++)
 	{
 		Projectile* pProjectile = new Projectile();
@@ -107,8 +108,8 @@ Level::Level()
 	for (int i = 0; i < 20; i++) // 20 simultaneous ships on screen limit
 	{
 		EnemyShip* pEnemy = new EnemyShip();
-		pEnemy->SetProjectilePool(&m_enemyProjectiles); // Assign standard projectiles
-		pEnemy->SetLaserPool(&m_enemyLasers); // Assign laser beams
+		pEnemy->SetProjectilePool(&m_enemyProjectiles);
+		pEnemy->SetLaserPool(&m_enemyLasers);
 		m_enemies.push_back(pEnemy);
 		AddGameObject(pEnemy);
 	}
@@ -122,7 +123,7 @@ Level::Level()
 	CollisionType enemyProjectile = (CollisionType::Enemy | CollisionType::Projectile);
 
 	pC->AddNonCollisionType(playerShip, playerProjectile);
-	pC->AddNonCollisionType(enemyShip, enemyProjectile); // Enemies do not shoot each other
+	pC->AddNonCollisionType(enemyShip, enemyProjectile);
 
 	pC->AddCollisionType(playerProjectile, enemyShip, PlayerShootsEnemy);
 	pC->AddCollisionType(playerShip, enemyShip, PlayerCollidesWithEnemy);
@@ -145,12 +146,15 @@ void Level::LoadContent(ResourceManager& resourceManager)
 {
 	m_pPlayerShip->LoadContent(resourceManager);
 
+	// Load the font for the level transition text
+	m_pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
+
 	m_pEnemyTextures[0] = resourceManager.Load<Texture>("Textures\\EnemyShipNormal.png");
 	m_pEnemyTextures[1] = resourceManager.Load<Texture>("Textures\\EnemyShipBurst.png");
 	m_pEnemyTextures[2] = resourceManager.Load<Texture>("Textures\\EnemyShipSpeed.png");
 	m_pEnemyTextures[3] = resourceManager.Load<Texture>("Textures\\EnemyShipLaser.png");
 	m_pEnemyTextures[4] = resourceManager.Load<Texture>("Textures\\EnemyShipMulti.png");
-	m_pEnemyTextures[5] = resourceManager.Load<Texture>("Textures\\EnemyShipHealth.png");
+	m_pEnemyTextures[5] = resourceManager.Load<Texture>("Textures\\EnemyShipShield.png");
 
 	m_pLaserBeamTexture = resourceManager.Load<Texture>("Textures\\LaserBeam.png");
 
@@ -185,42 +189,80 @@ void Level::HandleInput(const InputState& input)
 
 void Level::Update(const GameTime& gameTime)
 {
-	// Enemy Spawn Manager 
-	m_enemySpawnTimer -= (float)gameTime.GetElapsedTime();
-	if (m_enemySpawnTimer <= 0.0f)
+	// --- Wave and Level Progression Manager ---
+	if (m_enemiesToSpawn > 0)
 	{
-		for (EnemyShip* pEnemy : m_enemies)
+		m_enemySpawnTimer -= (float)gameTime.GetElapsedTime();
+		if (m_enemySpawnTimer <= 0.0f)
 		{
-			if (!pEnemy->IsActive())
+			for (EnemyShip* pEnemy : m_enemies)
 			{
-				// Choose a random type (from 0 to 5)
-				int randomType = rand() % 6;
-				pEnemy->SetType(static_cast<EnemyType>(randomType));
+				if (!pEnemy->IsActive())
+				{
+					// Choose a random type (from 0 to 5)
+					int randomType = rand() % 6;
+					pEnemy->SetType(static_cast<EnemyType>(randomType));
 
-				// Assign the texture directly to the EnemyShip base class
-				pEnemy->SetTexture(m_pEnemyTextures[randomType]);
+					// Assign the texture directly to the EnemyShip base class
+					pEnemy->SetTexture(m_pEnemyTextures[randomType]);
 
-				// Choose a random X position at the top edge
-				int margin = 50;
-				float randomX = margin + (float)(rand() % (Game::GetScreenWidth() - (margin * 2)));
-				Vector2 spawnPosition(randomX, -50.0f);
+					// Choose a random X position at the top edge
+					int margin = 50;
+					float randomX = margin + (float)(rand() % (Game::GetScreenWidth() - (margin * 2)));
 
-				// Launch it into the scene!
-				pEnemy->Initialize(spawnPosition, 0.0);
+					// Aparecen justo arriba del borde superior de la pantalla
+					Vector2 spawnPosition(randomX, -50.0f);
 
-				break; // Only spawn one enemy per cycle
+					// Configurar y encender la nave
+					pEnemy->Initialize(spawnPosition, 0.0f);
+					pEnemy->Activate();
+
+					// FORZAR MOVIMIENTO: Darle dirección y velocidad hacia abajo
+					// Esto asegura que las naves genéricas no se queden flotando arriba
+					pEnemy->SetSpeed(150.0f + (m_currentLevel * 10.0f)); // Se hacen más rápidos cada nivel
+					pEnemy->SetDesiredDirection(Vector2::UNIT_Y); // UNIT_Y significa "hacia abajo" en 2D
+
+					m_enemiesToSpawn--; // Decrease the remaining enemies count
+
+					break; // Only spawn one enemy per cycle
+				}
 			}
-		}
 
-		// Reset the timer (e.g., 1.5 seconds)
-		m_enemySpawnTimer = 1.5f;
+			// Randomize the next spawn delay based on the current level
+			float baseDelay = 2.0f - (m_currentLevel * 0.1f);
+			if (baseDelay < 0.5f) baseDelay = 0.5f; // Hard cap limit
+			m_enemySpawnTimer = baseDelay + ((rand() % 100) / 100.0f);
+		}
+	}
+	else
+	{
+		// --- Level Transition Logic ---
+		m_levelTransitionTimer += (float)gameTime.GetElapsedTime();
+
+		// Wait 4 seconds after the last enemy spawns to jump to the next level
+		if (m_levelTransitionTimer >= 4.0f)
+		{
+			m_currentLevel++;
+			m_enemiesToSpawn = 5 + (m_currentLevel * 3); // Increase enemy count for next level
+			m_levelTransitionTimer = 0.0f; // Reset transition timer
+
+			// --- Player Scaling ---
+			// Grant +1 Max Health and +0.1 Speed per wave survived
+			float newHealth = m_pPlayerShip->GetMaxHitPoints() + 1.0f;
+			float newSpeed = m_pPlayerShip->GetSpeed() + 0.1f;
+
+			m_pPlayerShip->SetMaxHitPoints(newHealth);
+			m_pPlayerShip->SetSpeed(newSpeed);
+		}
 	}
 
+	// --- Limpieza de sectores para colisiones ---
 	for (unsigned int i = 0; i < m_totalSectorCount; i++)
 	{
 		m_pSectors[i].clear();
 	}
 
+	// --- Actualizar todos los objetos del juego ---
 	m_gameObjectIt = m_gameObjects.begin();
 	for (; m_gameObjectIt != m_gameObjects.end(); m_gameObjectIt++)
 	{
@@ -228,6 +270,7 @@ void Level::Update(const GameTime& gameTime)
 		pGameObject->Update(gameTime);
 	}
 
+	// --- Revisar Colisiones ---
 	for (unsigned int i = 0; i < m_totalSectorCount; i++)
 	{
 		if (m_pSectors[i].size() > 1)
@@ -236,8 +279,10 @@ void Level::Update(const GameTime& gameTime)
 		}
 	}
 
+	// --- Actualizar Explosiones ---
 	for (Explosion* pExplosion : s_explosions) pExplosion->Update(gameTime);
 
+	// --- Condición de Derrota ---
 	if (!m_pPlayerShip->IsActive()) GetGameplayScreen()->Exit();
 }
 
@@ -334,6 +379,23 @@ void Level::Draw(SpriteBatch& spriteBatch)
 	{
 		GameObject* pGameObject = (*m_gameObjectIt);
 		pGameObject->Draw(spriteBatch);
+	}
+
+	// --- Draw Level Transition Text ---
+	if (m_enemiesToSpawn <= 0 && m_pFont != nullptr)
+	{
+		std::string transitionText = "LEVEL " + std::to_string(m_currentLevel + 1) + " APPROACHING";
+
+		// Calculate center position for the text
+		// Font::GetTextWidth expects a const char*, and returns an int width.
+		// Build a Vector2 containing width and line height.
+		int textWidth = m_pFont->GetTextWidth(transitionText.c_str());
+		int textHeight = m_pFont->GetLineHeight();
+		Vector2 textSize((float)textWidth, (float)textHeight);
+		Vector2 textPosition = Game::GetScreenCenter() - (textSize / 2.0f);
+
+		// DrawString expects a std::string* in the current API, so pass the address.
+		spriteBatch.DrawString(m_pFont, &transitionText, textPosition, Color::WHITE * alpha);
 	}
 
 	spriteBatch.End();

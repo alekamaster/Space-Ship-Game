@@ -1,47 +1,52 @@
-
 #include "BioEnemyShip.h"
-#include "Level.h"
 
+// Implementaciones mínimas para evitar que la clase sea abstracta.
+// Las funciones delegan en la implementación base cuando tiene sentido
+// y proporcionan comportamientos por defecto simples.
 
 BioEnemyShip::BioEnemyShip()
 {
-	SetSpeed(150);
-	SetMaxHitPoints(1);
-	SetCollisionRadius(20);
-
-	m_shootTimer = (float)(rand() % 200) / 100.0f;
-
+	// Valor por defecto del tipo (puede ajustarse más tarde)
+	SetType(EnemyType::Normal);
 }
 
-
-void BioEnemyShip::Update(const GameTime& gameTime)
+BioEnemyShip::~BioEnemyShip()
 {
-	if (IsActive())
-	{
-		float x = sin(gameTime.GetTotalTime() * Math::PI + GetIndex());
-		x *= GetSpeed() * gameTime.GetElapsedTime() * 1.4f;
-		TranslatePosition(x, GetSpeed() * gameTime.GetElapsedTime());
+}
 
-		//Enemy shoot logic
-		m_shootTimer -= gameTime.GetElapsedTime();
-		if (m_shootTimer <= 0.0f)
-		{
-			m_shootTimer = m_shootCooldown; //timer reset
-		}
+void BioEnemyShip::SetType(EnemyType type)
+{
+	// Delegamos al comportamiento por defecto en EnemyShip
+	EnemyShip::SetType(type);
+}
 
+void BioEnemyShip::Initialize(const KatanaEngine::Vector2 position, const double delaySeconds)
+{
+	// Llamamos a la inicialización base para aprovechar lógica común
+	EnemyShip::Initialize(position, delaySeconds);
+}
 
-		if (!IsOnScreen()) Deactivate();
-	}
-
+void BioEnemyShip::Update(const KatanaEngine::GameTime& gameTime)
+{
+	// Usar la actualización por defecto del EnemyShip
 	EnemyShip::Update(gameTime);
 }
 
-
-void BioEnemyShip::Draw(SpriteBatch& spriteBatch)
+void BioEnemyShip::Draw(KatanaEngine::SpriteBatch& spriteBatch)
 {
-	if (IsActive()&& m_pTexture)
-	{
-		const float alpha = GetCurrentLevel()->GetAlpha();
-		spriteBatch.Draw(m_pTexture, GetPosition(), Color::WHITE * alpha, m_pTexture->GetCenter(), Vector2::ONE, Math::PI, 1);
-	}
+	// Dibujado por defecto (si se requiere personalización, modificar aquí)
+	EnemyShip::Draw(spriteBatch);
+}
+
+KatanaEngine::Vector2 BioEnemyShip::GetHalfDimensions() const
+{
+	// Proporciona dimensiones por defecto seguras si no hay acceso directo a la textura.
+	// Si se desea cálculo preciso, reemplazar con lógica que use recursos accesibles.
+	return KatanaEngine::Vector2(16.0f, 16.0f);
+}
+
+void BioEnemyShip::Hit(const float damage)
+{
+	// Delegamos la lógica de recibir daño a la implementación base.
+	EnemyShip::Hit(damage);
 }

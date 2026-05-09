@@ -10,7 +10,7 @@ public:
 	virtual void Initialize() {}
 	LaserBeam();
 	virtual ~LaserBeam() {}
-	
+
 	/** @brief Activates the laser beam at a specific location for a set duration. */
 	virtual void Activate(const Vector2 position, const float lifetime);
 
@@ -25,9 +25,28 @@ public:
 	virtual void SetTexture(Texture* pTexture) { m_pTexture = pTexture; }
 
 	/** @brief Gets the collision type, masking it as an enemy projectile. */
-	virtual CollisionType GetCollisionType() const override { return CollisionType::Enemy | CollisionType::Projectile; }
+	virtual float GetCollisionRadius() const override
+	{
+		if (m_pTexture != nullptr) return m_pTexture->GetCenter().Y * m_lengthScale;
+		return 0.5f;
+	}
+
+	// --- NUEVO: Método para alinear las físicas con el escalado visual ---
+	// Declaración solamente: la implementación se encuentra en LaserBeam.cpp
+	virtual Vector2 GetHalfDimensions() const override;
+
+	/** @brief Gets the collision type mask for the laser beam. */
+	virtual CollisionType GetCollisionType() const override
+	{
+		// Laser beams are enemy projectiles for collision purposes
+		return CollisionType::Enemy | CollisionType::Projectile;
+	}
 
 private:
 	float m_lifetime = 0.0f;
 	Texture* m_pTexture = nullptr;
+
+	// --- CONTROL DE ESCALA SEPARADO ---
+	float m_widthScale = 0.3f;  // X: Controla qué tan grueso es el láser
+	float m_lengthScale = 2.0f; // Y: Controla el largo (2.0f lo hace el doble de largo)
 };
