@@ -1,22 +1,39 @@
-
 #include "PlayerShip.h"
 #include "Level.h"
+
+// Using the namespace instead of wrapping the entire code block in it
+using namespace KatanaEngine;
+
+// --- STATIC VARIABLE INITIALIZATION FOR CUSTOMIZATION ---
+std::string PlayerShip::SelectedTexturePath = "Textures\\SpaceShipDefault.png";
+float PlayerShip::SelectedScale = 1.0f;
+float PlayerShip::SelectedSpeed = 300.0f;
+int PlayerShip::SelectedMaxHitPoints = 5;
 
 void PlayerShip::LoadContent(ResourceManager& resourceManager)
 {
 	ConfineToScreen();
-	SetResponsiveness(0.1);
+	SetResponsiveness(0.1f);
 
-	m_pTexture = resourceManager.Load<Texture>("Textures\\PlayerShip.png");
+	// 1. Apply the stats chosen from the customization menu
+	SetSpeed(SelectedSpeed);
+	SetMaxHitPoints(SelectedMaxHitPoints);
+
+	// 2. Load the dynamic texture based on the player's choice
+	m_pTexture = resourceManager.Load<Texture>(SelectedTexturePath);
+
+	float hitBoxRadius = m_pTexture->GetCenter().X * SelectedScale; 
+	SetCollisionRadius(hitBoxRadius);
+	// 3. Load Audio and Weapons
 
 	AudioSample* pAudio = resourceManager.Load<AudioSample>("Audio\\Effects\\Laser.wav");
-	pAudio->SetVolume(0.5f);
-	GetWeapon("Main Blaster")->SetFireSound(pAudio);
+	if (pAudio) pAudio->SetVolume(0.5f);
+
+	Weapon* pMainWeapon = GetWeapon("Main Blaster");
+	if (pMainWeapon && pAudio) pMainWeapon->SetFireSound(pAudio);
 
 	SetPosition(Game::GetScreenCenter() + Vector2::UNIT_Y * 300);
-
 }
-
 
 void PlayerShip::Initialize(Level* pLevel, Vector2& startPosition)
 {
@@ -41,39 +58,23 @@ void PlayerShip::HandleInput(const InputState& input)
 
 		TriggerType type = TriggerType::None;
 		if (input.IsKeyDown(Key::SPACE)) type |= TriggerType::Primary;
-		//if (input.IsKeyDown(Key::D)) type |= TriggerType::Secondary;
-		//if (input.IsKeyDown(Key::S)) type |= TriggerType::Special;
-
-		//// Handle Xbox Controller
-		//GamePadState* pState = input.GetGamePadState(0);
-		//if (pState->IsConnected)
-		//{
-		//	// gamepad overrides keyboard input
-		//	Vector2 thumbstick = pState->Thumbsticks.Left;
-		//	if (thumbstick.LengthSquared() < 0.08f) thumbstick = Vector2::ZERO;
-		//	direction = thumbstick;
-
-		//	type = TriggerType::None;
-		//	if (pState->Triggers.Right > 0.5f) type |= TriggerType::Primary;
-		//	if (pState->Triggers.Left > 0.5f) type |= TriggerType::Secondary;
-		//	if (pState->IsButtonDown(Button::Y)) type |= TriggerType::Special;
-		//}
-
 
 		SetDesiredDirection(direction);
 		if (type != TriggerType::None) FireWeapons(type);
 	}
 }
 
-
 void PlayerShip::Update(const GameTime& gameTime)
 {
 	// Get the velocity for the direction that the player is trying to go.
+	// Note: GetSpeed() now uses the SelectedSpeed configured in LoadContent.
 	Vector2 targetVelocity = m_desiredDirection * GetSpeed() * gameTime.GetElapsedTime();
+
 	// We can't go from 0-100 mph instantly! This line interpolates the velocity for us.
 	m_velocity = Vector2::Lerp(m_velocity, targetVelocity, GetResponsiveness());
+
 	// Move that direction
-	TranslatePosition(m_velocity);
+	TranslatePosition(m_velocity * 2);
 
 	if (m_isConfinedToScreen)
 	{
@@ -86,10 +87,8 @@ void PlayerShip::Update(const GameTime& gameTime)
 		Vector2* pPosition = &GetPosition(); // current position (middle of the ship)
 		if (pPosition->X - GetHalfDimensions().X < Left) // are we past the left edge?
 		{
-			// move the ship to the left edge of the screen (keep Y the same)
 			SetPosition(Left + GetHalfDimensions().X, pPosition->Y);
-			m_velocity.X = 0; // remove any velocity that could potentially
-							  // keep the ship pinned against the edge
+			m_velocity.X = 0;
 		}
 		if (pPosition->X + GetHalfDimensions().X > Right) // right edge?
 		{
@@ -115,18 +114,65 @@ void PlayerShip::Draw(SpriteBatch& spriteBatch)
 {
 	if (IsActive())
 	{
+		// Restore the Alpha so screen transitions look smooth and correct
 		const float alpha = GetCurrentLevel()->GetAlpha();
-		spriteBatch.Draw(m_pTexture, GetPosition(), Color::WHITE * alpha, m_pTexture->GetCenter());
+
+
+		Vector2 scaleVector = Vector2(SelectedScale, SelectedScale);
+		// Use the static scale to draw the ship at the correct customized size
+		spriteBatch.Draw(
+			m_pTexture,
+			GetPosition(),
+			Color::WHITE * alpha,
+			m_pTexture->GetCenter(),
+			Vector2(SelectedScale, SelectedScale), 
+			0.0f
+		);
 	}
 }
 
-
 Vector2 PlayerShip::GetHalfDimensions() const
 {
-	return m_pTexture->GetCenter();
+	
+	return m_pTexture->GetCenter() * SelectedScale;
 }
 
 void PlayerShip::SetResponsiveness(const float responsiveness)
 {
 	m_responsiveness = Math::Clamp(0, 1, responsiveness);
+}
+
+// --- CENTRAL METHOD TO SET CHOSEN SHIP AND STATS ---
+void PlayerShip::SetSelectedShip(int shipIndex)
+{
+	switch (shipIndex)
+	{
+	case 1: // Ship 2: Heavy
+		SelectedTexturePath = "Textures\\SpaceShipHealth.png";
+		SelectedScale = 0.8f;
+		SelectedSpeed = 150.0f;
+		SelectedMaxHitPoints = 6;
+		break;
+
+	case 2: // Ship 3: Speed
+		SelectedTexturePath = "Textures\\SpaceShipSpeed.png";
+		SelectedScale = 0.1f;
+		SelectedSpeed = 450.0f;
+		SelectedMaxHitPoints = 1;
+		break;
+
+	case 3: // Ship 4: Elite / Lethal
+		SelectedTexturePath = "Textures\\SpaceShipAttack.png";
+		SelectedScale = .8f;
+		SelectedSpeed = 250.0f;
+		SelectedMaxHitPoints = 2;
+		break;
+
+	default: // DEFAULT CASE (Index 0 or any invalid value)
+		SelectedTexturePath = "Textures\\SpaceShipDefault.png"; 
+		SelectedScale = 1.0f;
+		SelectedSpeed = 300.0f;
+		SelectedMaxHitPoints = 3;
+		break;
+	}
 }

@@ -13,6 +13,9 @@
 */
 
 #include "KatanaEngine.h"
+#include "Animation.h"
+#include "KatanaEngine.h"
+
 
 namespace KatanaEngine
 {

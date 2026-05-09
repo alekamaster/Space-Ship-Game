@@ -174,10 +174,12 @@
     <ClCompile Include="Blaster.cpp" />
     <ClCompile Include="CollisionManager.cpp" />
     <ClCompile Include="CollisionType.cpp" />
+    <ClCompile Include="CustomizeScreen.cpp" />
     <ClCompile Include="EnemyShip.cpp" />
     <ClCompile Include="Explosion.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="GameplayScreen.cpp" />
+    <ClCompile Include="LaserBeam.cpp" />
     <ClCompile Include="Level.cpp" />
     <ClCompile Include="Level01.cpp" />
     <ClCompile Include="Level02.cpp" />
@@ -200,10 +202,12 @@
     <ClInclude Include="Blaster.h" />
     <ClInclude Include="CollisionManager.h" />
     <ClInclude Include="CollisionType.h" />
+    <ClInclude Include="CustomizeScreen.h" />
     <ClInclude Include="EnemyShip.h" />
     <ClInclude Include="Explosion.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="GameplayScreen.h" />
+    <ClInclude Include="LaserBeam.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="Level01.h" />
     <ClInclude Include="Level02.h" />

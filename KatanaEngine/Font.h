@@ -13,9 +13,14 @@
 */
 
 #pragma once
+#include "Resource.h"
+#include <string>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 
 namespace KatanaEngine
 {
+	class ResourceManager;
 	/** @brief Represents a font or true-type font. */
 	class Font : public Resource
 	{

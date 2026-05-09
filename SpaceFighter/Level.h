@@ -1,19 +1,19 @@
-
 #pragma once
-
 #include "KatanaEngine.h"
 #include "PlayerShip.h"
 #include "CollisionManager.h"
 #include "Explosion.h"
+#include "LaserBeam.h"
 
 using namespace KatanaEngine;
 
 class GameplayScreen;
+class EnemyShip;
+class Projectile; // Safe forward declaration for the projectiles
 
 /** @brief Represents a level in the game. */
 class Level
 {
-
 public:
 
 	/** @brief Instantiate a level object. */
@@ -26,14 +26,14 @@ public:
 	virtual void LoadContent(ResourceManager& resourceManager);
 
 	/** @brief Unload the content for the level. */
-	virtual void UnloadContent() { };
+	virtual void UnloadContent() {};
 
 	/** @brief Handle input for the level.
 		@param input The current state of all player input devices. */
 	virtual void HandleInput(const InputState& input);
 
 	/** @brief Update the level.
-		@param pGameTime Timing values including time since last update. */
+		@param gameTime Timing values including time since last update. */
 	virtual void Update(const GameTime& gameTime);
 
 	/** @brief Render the level, and all of the game objects within it.
@@ -55,7 +55,7 @@ public:
 	virtual void SetGameplayScreen(GameplayScreen* pGameplayScreen) { m_pGameplayScreen = pGameplayScreen; }
 
 	/** @brief Spawn an explosion at a specific position.
-		@param position The position to spawn the explosion at. */
+		@param pExplodingObject The object generating the explosion. */
 	virtual void SpawnExplosion(GameObject* pExplodingObject);
 
 	/** @brief Set the background texture for the level.
@@ -109,7 +109,6 @@ public:
 		return pClosest;
 	}
 
-
 protected:
 
 	/** @brief Get a pointer to the collision manager.
@@ -130,16 +129,15 @@ protected:
 
 private:
 
-	static std::vector<Explosion *> s_explosions;
-	//std::vector<Explosion *>::iterator m_explosionIt;
+	static std::vector<Explosion*> s_explosions;
 
 	CollisionManager* m_pCollisionManager = nullptr;
-
 	GameplayScreen* m_pGameplayScreen = nullptr;
-
 	AudioSample* m_pAudio = nullptr;
 
 	Texture* m_pBackground = nullptr;
+	Texture* m_pLaserBeamTexture = nullptr;
+	Texture* m_pEnemyTextures[6];
 
 	std::vector<GameObject*>* m_pSectors;
 
@@ -154,14 +152,23 @@ private:
 	PlayerShip* m_pPlayerShip;
 	std::vector<Projectile*> m_projectiles;
 
+	// Enemy list and timers
+	std::vector<EnemyShip*> m_enemies;
+	std::vector<Projectile*> m_enemyProjectiles;
+	std::vector<LaserBeam*> m_enemyLasers;
+	float m_enemySpawnTimer = 0.0f;
+
+	// --- Wave and Level Progression ---
+	int m_currentLevel = 1;              // Tracks the current level
+	int m_enemiesToSpawn = 5;            // How many enemies are left to spawn in this level
+	float m_levelTransitionTimer = 0.0f; // Timer for the text display pause
+	Font* m_pFont = nullptr;             // Pointer to draw the transition text
+
 	void CheckCollisions(std::vector<GameObject*>& sector);
 
 	virtual Vector2 GetSectorCount() const { return m_sectorCount; }
-
 	virtual Vector2 GetSectorSize() const { return m_sectorSize; }
-
 	virtual unsigned int GetTotalSectorCount() const { return m_totalSectorCount; }
-
 	virtual std::vector<GameObject*>* GetSectors() { return m_pSectors; }
 
 };

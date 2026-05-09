@@ -13,7 +13,8 @@
 */
 
 #pragma once
-
+#include <iostream>
+#include "Point.h"
 namespace KatanaEngine
 {
 	/** @brief Defines a vector with 2 components (x and y). */

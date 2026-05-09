@@ -13,7 +13,7 @@
 */
 
 #pragma once
-
+#include <allegro5/allegro.h>
 namespace KatanaEngine
 {
 	/** @brief Represents a four-component color using red, green, blue, and alpha data. */

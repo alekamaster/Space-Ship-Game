@@ -13,6 +13,11 @@
 */
 
 #pragma once
+#include "Resource.h"
+#include <string>
+#include <map>
+#include <vector>
+
 
 namespace KatanaEngine
 {

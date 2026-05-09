@@ -1,61 +1,53 @@
-
 #pragma once
-
 #include "Ship.h"
 
-/** @brief Represents an enemy ship. */
+enum class EnemyType { Normal, Burst, Speed, Laser, Multishot, Health };
+
+class Projectile;
+class LaserBeam;
+
 class EnemyShip : public Ship
 {
-
 public:
-
-	/** @brief Creates a new instance of EnemyShip. */
 	EnemyShip();
-	virtual ~EnemyShip() { }
+	virtual ~EnemyShip() {}
 
-	/** @brief Loads the content for the enemy ship.
-		@param resourceManager A reference to the game's resource manager,
-		used for loading and managing game assets (resources). */
-	virtual void Update(const GameTime& gameTime);
+	virtual void SetType(EnemyType type);
+	virtual void Update(const KatanaEngine::GameTime& gameTime) override;
+	virtual void Draw(KatanaEngine::SpriteBatch& spriteBatch) override;
+	virtual void Initialize(const KatanaEngine::Vector2 position, const double delaySeconds);
+	virtual KatanaEngine::Vector2 GetHalfDimensions() const override;
+	virtual void Hit(const float damage) override;
 
-	/** @brief Draws the enemy ship.
-		@param spriteBatch A reference to the game's sprite batch, used for rendering. */
-	virtual void Draw(SpriteBatch& spriteBatch) = 0;
+	// Implement the pure virtual from Ship to make EnemyShip concrete
+	virtual CollisionType GetCollisionType() const override { return CollisionType::Enemy | CollisionType::Ship; }
 
-	/** @brief Initializes the enemy ship.
-		@param position The starting position of the enemy ship.
-		@param delaySeconds The delay before the enemy ship activates. */
-	virtual void Initialize(const Vector2 position, const double delaySeconds);
+	void SetTexture(KatanaEngine::Texture* pTexture) { m_pTexture = pTexture; }
+	void SetProjectilePool(std::vector<Projectile*>* pProjectiles) { m_pProjectiles = pProjectiles; }
+	void SetLaserPool(std::vector<LaserBeam*>* pLaserBeams) { m_pLaserBeams = pLaserBeams; }
 
-	/** @brief Fires a weapon from the enemy ship. */
-	virtual void Fire() { }
-
-	/** @brief Applies damage to the ship.
-		@param damage The amount of damage to apply. */
-	virtual void Hit(const float damage);
-
-	/** @brief Gets the string representation of the enemy ship.
-		@return Returns the string "Enemy Ship". */
-	virtual std::string ToString() const { return "Enemy Ship"; }
-
-	/** @brief Gets the collision type of the enemy ship.
-		@return Returns the collision type of the enemy ship. */
-	virtual CollisionType GetCollisionType() const { return CollisionType::Enemy | CollisionType::Ship; }
-
-
-protected:
-
-	/** @brief Gets the delay before the enemy ship activates,
-		to prevent all enemy ships from activating at the same time.
-		@return Returns the delay before the enemy ship activates. */
-	virtual double GetDelaySeconds() const { return m_delaySeconds; }
-
+	// Método para que el Level (y el futuro HUD) sepa cuántos puntos dar
+	int GetScoreValue() const { return m_scoreValue; }
 
 private:
+	void Fire();
+
+	KatanaEngine::Texture* m_pTexture = nullptr;
+	EnemyType m_type = EnemyType::Normal;
 
 	double m_delaySeconds = 0;
-
 	double m_activationSeconds = 0;
 
+	std::vector<Projectile*>* m_pProjectiles = nullptr;
+	std::vector<LaserBeam*>* m_pLaserBeams = nullptr;
 
+	float m_shootTimer = 0.0f;
+	float m_shootCooldown = 2.0f;
+
+	
+	// --- CONTROL DE RÁFAGAS ---
+	int m_burstShotsFired = 3;
+	float m_scale = 1.0f;        // Control de tamaño físico y visual
+	int m_scoreValue = 10;       // Recompensa de puntos
+	float m_flashTimer = 0.0f;   // Temporizador para el parpadeo rojo de daño
 };
