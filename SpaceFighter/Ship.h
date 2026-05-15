@@ -110,4 +110,3 @@ private:
 	std::map<std::string, IAttachment *> m_attachments;
 	std::map<std::string, IAttachment*>::iterator m_attachmentIt;
 };
-

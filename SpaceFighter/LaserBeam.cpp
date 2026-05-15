@@ -10,6 +10,7 @@ void LaserBeam::Activate(const Vector2 position, const float lifetime)
 {
 	SetPosition(position);
 	m_lifetime = lifetime;
+	m_hasDealtDamage = false; // Reset damage flag on activation
 	GameObject::Activate();
 }
 

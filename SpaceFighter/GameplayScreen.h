@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "KatanaEngine.h"
@@ -42,6 +41,11 @@ public:
 		@param levelIndex The index of the level to load. */
 	virtual void LoadLevel(const int levelIndex);
 
+	/** @brief Trigger game over and show game over screen.
+		@param finalScore The player's final score.
+		@param finalLevel The level the player reached. */
+	virtual void GameOver(int finalScore, int finalLevel);
+
 
 private:
 
@@ -50,5 +54,7 @@ private:
 	Level *m_pLevel = nullptr;
 
 	ResourceManager *m_pResourceManager = nullptr;
+
+	Font *m_pHudFont = nullptr;
 
 };

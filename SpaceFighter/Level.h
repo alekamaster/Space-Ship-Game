@@ -70,6 +70,30 @@ public:
 		@return True if the screen is transitioning. */
 	virtual bool IsScreenTransitioning() const { return GetAlpha() < 1; }
 
+	/** @brief Get a pointer to the player ship.
+		@return Pointer to the player ship. */
+	virtual PlayerShip* GetPlayerShip() const { return m_pPlayerShip; }
+
+	/** @brief Get a pointer to the collision manager.
+		@return A pointer to the collision manager. */
+	virtual CollisionManager* GetCollisionManager() { return m_pCollisionManager; }
+
+	/** @brief Get a pointer to the gameplay screen.
+		@return A pointer to the gameplay screen. */
+	virtual GameplayScreen* GetGameplayScreen() const { return m_pGameplayScreen; }
+
+	/** @brief Set the background audio for the level.
+		@param pAudio A pointer to the audio sample to play. */
+	virtual void SetBackgroundAudio(AudioSample* pAudio) { m_pAudio = pAudio; }
+
+	/** @brief Get the background audio for the level.
+		@return A pointer to the audio sample to play. */
+	virtual AudioSample* GetBackgroundAudio() { return m_pAudio; }
+
+	/** @brief Add score to the current score.
+		@param score The score to add. */
+	void AddScore(int score) { m_currentScore += score; }
+
 	/** @brief Get a pointer to the closest object of a specific type.
 		@param position The position to check from.
 		@param range The maximum range to check.
@@ -92,7 +116,7 @@ public:
 		for (; m_it != m_gameObjects.end(); m_it++)
 		{
 			GameObject* pGameObject = *m_it;
-			if (pGameObject->IsActive()) continue;
+			if (!pGameObject->IsActive()) continue;
 
 			squaredDistance = (position - pGameObject->GetPosition()).LengthSquared();
 			if (squaredDistance < squaredRange)
@@ -109,23 +133,13 @@ public:
 		return pClosest;
 	}
 
-protected:
+	/** @brief Get the current score.
+		@return The current score. */
+	virtual int GetScore() const { return m_currentScore; }
 
-	/** @brief Get a pointer to the collision manager.
-		@return A pointer to the collision manager. */
-	virtual CollisionManager* GetCollisionManager() { return m_pCollisionManager; }
-
-	/** @brief Get a pointer to the gameplay screen.
-		@return A pointer to the gameplay screen. */
-	virtual GameplayScreen* GetGameplayScreen() const { return m_pGameplayScreen; }
-
-	/** @brief Set the background audio for the level.
-		@param pAudio A pointer to the audio sample to play. */
-	virtual void SetBackgroundAudio(AudioSample* pAudio) { m_pAudio = pAudio; }
-
-	/** @brief Get the background audio for the level.
-		@return A pointer to the audio sample to play. */
-	virtual AudioSample* GetBackgroundAudio() { return m_pAudio; }
+	/** @brief Get the current level number.
+		@return The current level number. */
+	virtual int GetCurrentLevel() const { return m_currentLevel; }
 
 private:
 
@@ -163,6 +177,7 @@ private:
 	int m_enemiesToSpawn = 5;            // How many enemies are left to spawn in this level
 	float m_levelTransitionTimer = 0.0f; // Timer for the text display pause
 	Font* m_pFont = nullptr;             // Pointer to draw the transition text
+	int m_currentScore = 0;  // Player's current score
 
 	void CheckCollisions(std::vector<GameObject*>& sector);
 

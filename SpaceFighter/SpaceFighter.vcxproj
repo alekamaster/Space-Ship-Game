@@ -178,6 +178,7 @@
     <ClCompile Include="EnemyShip.cpp" />
     <ClCompile Include="Explosion.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="GameOverScreen.cpp" />
     <ClCompile Include="GameplayScreen.cpp" />
     <ClCompile Include="LaserBeam.cpp" />
     <ClCompile Include="Level.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="EnemyShip.h" />
     <ClInclude Include="Explosion.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="GameOverScreen.h" />
     <ClInclude Include="GameplayScreen.h" />
     <ClInclude Include="LaserBeam.h" />
     <ClInclude Include="Level.h" />

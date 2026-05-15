@@ -16,8 +16,18 @@ void PlayerShootsEnemy(GameObject* pObject1, GameObject* pObject2)
 	EnemyShip* pEnemyShip = (EnemyShip*)((m) ? pObject1 : pObject2);
 	Projectile* pPlayerProjectile = (Projectile*)((!m) ? pObject1 : pObject2);
 
+	float hitPointsBefore = pEnemyShip->GetMaxHitPoints(); // Use max HP as proxy
+	bool wasActive = pEnemyShip->IsActive();
+	
 	pEnemyShip->Hit(pPlayerProjectile->GetDamage());
 	pPlayerProjectile->Deactivate();
+	
+	// Award score if enemy was killed
+	if (wasActive && !pEnemyShip->IsActive())
+	{
+		Level* pLevel = GameObject::GetCurrentLevel();
+		if (pLevel) pLevel->AddScore(pEnemyShip->GetScoreValue());
+	}
 }
 
 /** @brief Callback function for when an enemy shoots the player. */
@@ -27,12 +37,20 @@ void EnemyShootsPlayer(GameObject* pObject1, GameObject* pObject2)
 	PlayerShip* pPlayerShip = (PlayerShip*)((m) ? pObject1 : pObject2);
 	GameObject* pEnemyWeapon = (!m) ? pObject1 : pObject2;
 
+	// Safety check: ensure both objects are active
+	if (!pPlayerShip->IsActive() || !pEnemyWeapon->IsActive()) return;
+
 	// Check if the enemy weapon is a LaserBeam
 	LaserBeam* pLaser = dynamic_cast<LaserBeam*>(pEnemyWeapon);
 	if (pLaser)
 	{
-		pPlayerShip->Hit(pLaser->GetDamage());
-		// The laser DOES NOT deactivate! It stays alive until its timer ends.
+		// Only deal damage if this laser hasn't already hit something
+		if (!pLaser->HasDealtDamage())
+		{
+			pPlayerShip->Hit(pLaser->GetDamage());
+			pLaser->MarkDamageDealt(); // Mark that this laser has dealt damage
+		}
+		// The laser DOES NOT deactivate! It stays alive until its timer ends. PS. I hate this laser i hate this laser why did it break so much.
 	}
 	else
 	{
@@ -52,6 +70,14 @@ void PlayerCollidesWithEnemy(GameObject* pObject1, GameObject* pObject2)
 	bool m = pObject1->HasMask(CollisionType::Player);
 	PlayerShip* pPlayerShip = (PlayerShip*)((m) ? pObject1 : pObject2);
 	EnemyShip* pEnemyShip = (EnemyShip*)((!m) ? pObject1 : pObject2);
+	
+	// Award crash score before destroying
+	Level* pLevel = GameObject::GetCurrentLevel();
+	if (pLevel && pEnemyShip->IsActive()) 
+	{
+		pLevel->AddScore(pEnemyShip->GetScoreValue() / 2); // Half points for crash
+	}
+	
 	pPlayerShip->Hit(std::numeric_limits<float>::max());
 	pEnemyShip->Hit(std::numeric_limits<float>::max());
 }
@@ -105,7 +131,7 @@ Level::Level()
 	}
 
 	// Pool: Enemy Ships
-	for (int i = 0; i < 20; i++) // 20 simultaneous ships on screen limit
+	for (int i = 0; i < 20; i++) // 20 simultaneous ships on screen limit and if this does happen you are genuinely cooked
 	{
 		EnemyShip* pEnemy = new EnemyShip();
 		pEnemy->SetProjectilePool(&m_enemyProjectiles);
@@ -147,6 +173,7 @@ void Level::LoadContent(ResourceManager& resourceManager)
 	m_pPlayerShip->LoadContent(resourceManager);
 
 	// Load the font for the level transition text
+	Font::SetLoadSize(16, true);
 	m_pFont = resourceManager.Load<Font>("Fonts\\Ethnocentric.ttf");
 
 	m_pEnemyTextures[0] = resourceManager.Load<Texture>("Textures\\EnemyShipNormal.png");
@@ -217,9 +244,9 @@ void Level::Update(const GameTime& gameTime)
 					pEnemy->Initialize(spawnPosition, 0.0f);
 					pEnemy->Activate();
 
-					// FORZAR MOVIMIENTO: Darle direcciÃ³n y velocidad hacia abajo
-					// Esto asegura que las naves genÃ©ricas no se queden flotando arriba
-					pEnemy->SetSpeed(150.0f + (m_currentLevel * 10.0f)); // Se hacen mÃ¡s rÃ¡pidos cada nivel
+					// FORZAR MOVIMIENTO: Darle dirección y velocidad hacia abajo
+					// Esto asegura que las naves genéricas no se queden flotando arriba
+					pEnemy->SetSpeed(150.0f + (m_currentLevel * 10.0f)); // Se hacen más rápidos cada nivel
 					pEnemy->SetDesiredDirection(Vector2::UNIT_Y); // UNIT_Y significa "hacia abajo" en 2D
 
 					m_enemiesToSpawn--; // Decrease the remaining enemies count
@@ -282,8 +309,11 @@ void Level::Update(const GameTime& gameTime)
 	// --- Actualizar Explosiones ---
 	for (Explosion* pExplosion : s_explosions) pExplosion->Update(gameTime);
 
-	// --- CondiciÃ³n de Derrota ---
-	if (!m_pPlayerShip->IsActive()) GetGameplayScreen()->Exit();
+	// --- Condición de Derrota ---
+	if (!m_pPlayerShip->IsActive()) 
+	{
+		GetGameplayScreen()->GameOver(m_currentScore, m_currentLevel);
+	}
 }
 
 void Level::UpdateSectorPosition(GameObject* pGameObject)
@@ -381,27 +411,23 @@ void Level::Draw(SpriteBatch& spriteBatch)
 		pGameObject->Draw(spriteBatch);
 	}
 
-	// --- Draw Level Transition Text ---
-	if (m_enemiesToSpawn <= 0 && m_pFont != nullptr)
-	{
-		std::string transitionText = "LEVEL " + std::to_string(m_currentLevel + 1) + " APPROACHING";
+	for (Explosion* pExplosion : s_explosions) pExplosion->Draw(spriteBatch);
 
-		// Calculate center position for the text
-		// Font::GetTextWidth expects a const char*, and returns an int width.
-		// Build a Vector2 containing width and line height.
+	// Draw level transition text
+	if (m_enemiesToSpawn <= 0 && m_pFont != nullptr && m_levelTransitionTimer > 0 && m_levelTransitionTimer < 3.0f)
+	{
+		std::string transitionText = "LEVEL " + std::to_string(m_currentLevel) + " COMPLETE!";
+		
 		int textWidth = m_pFont->GetTextWidth(transitionText.c_str());
 		int textHeight = m_pFont->GetLineHeight();
 		Vector2 textSize((float)textWidth, (float)textHeight);
 		Vector2 textPosition = Game::GetScreenCenter() - (textSize / 2.0f);
+		
+		float pulse = sinf((float)m_levelTransitionTimer * 10) * 0.2f + 0.8f;
+		Color textColor = Color::YELLOW * alpha * pulse;
 
-		// DrawString expects a std::string* in the current API, so pass the address.
-		spriteBatch.DrawString(m_pFont, &transitionText, textPosition, Color::WHITE * alpha);
+		spriteBatch.DrawString(m_pFont, &transitionText, textPosition, textColor);
 	}
 
-	spriteBatch.End();
-
-	// Explosions use additive blending so they need to be drawn after the main sprite batch
-	spriteBatch.Begin(SpriteSortMode::Deferred, BlendState::Additive);
-	for (Explosion* pExplosion : s_explosions) pExplosion->Draw(spriteBatch);
 	spriteBatch.End();
 }

@@ -47,14 +47,8 @@
     <ClCompile Include="MainMenuScreen.cpp">
       <Filter>Source Files\Screens</Filter>
     </ClCompile>
-    <ClCompile Include="GameplayScreen.cpp">
-      <Filter>Source Files\Screens</Filter>
-    </ClCompile>
     <ClCompile Include="GameObject.cpp">
       <Filter>Source Files\Game Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Level.cpp">
-      <Filter>Source Files\Levels</Filter>
     </ClCompile>
     <ClCompile Include="SpaceFighter.cpp">
       <Filter>Source Files\Core</Filter>
@@ -107,6 +101,15 @@
     <ClCompile Include="LaserBeam.cpp">
       <Filter>Source Files\Game Objects\Weapons</Filter>
     </ClCompile>
+    <ClCompile Include="Level.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameplayScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameOverScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainMenuScreen.h">
@@ -136,9 +139,6 @@
     <ClInclude Include="PlayerShip.h">
       <Filter>Source Files\Game Objects\Ships</Filter>
     </ClInclude>
-    <ClInclude Include="Ship.h">
-      <Filter>Source Files\Game Objects\Ships</Filter>
-    </ClInclude>
     <ClInclude Include="Weapon.h">
       <Filter>Source Files\Game Objects\Weapons</Filter>
     </ClInclude>
@@ -166,8 +166,14 @@
     <ClInclude Include="CustomizeScreen.h">
       <Filter>Source Files\Screens</Filter>
     </ClInclude>
+    <ClInclude Include="Ship.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="LaserBeam.h">
-      <Filter>Source Files\Game Objects\Weapons</Filter>
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameOverScreen.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
